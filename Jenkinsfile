@@ -1,7 +1,7 @@
 def VALUESFILE = ""
 def INSTALL = ""
 pipeline {
-    // If you are running jenkins in a container use "agent { docker { image 'docker:18.09.0-git' }}"
+    // If you are running jenkins in a container use "agent { docker { image 'dtzar/helm-kubectl:2.11.0' }}"
     agent {
         kubernetes {
           label 'deploy'
@@ -28,11 +28,16 @@ spec:
         HELM_CHARTS_GIT_REPO = 'github.com/infracloudio/app-mono-helmcharts.git'
         HELM_CHARTS_REPO = 'app-mono-helmcharts'
         HELM_CHARTS_BRANCH = 'master'
-        GIT = credentials('github-credentials')
-        K8S_SERVER = credentials('k8s-server')
-        K8S_TILLER_TOKEN = credentials('k8s-tiller-token')
-        K8S_CA_BASE64 = credentials('k8s-ca-base84')
         GITHUB_HOOK_SECRET = "github-webhook-token-app-mono-helmstate"
+        //K8S_SERVER = credentials('k8s-server')
+        //K8S_TILLER_TOKEN = credentials('k8s-tiller-token')
+        //K8S_CA_BASE64 = credentials('k8s-ca-base84')
+        //GIT = credentials('github-credentials')
+        GIT_USR = ""
+        GIT_PSW = ""
+        K8S_SERVER = ""
+        K8S_TILLER_TOKEN = ""
+        K8S_CA_BASE64 = ""
     }
 
     stages {
@@ -105,7 +110,6 @@ def createKubeconfig() {
     kubectl config set-credentials tiller --token=$K8S_TILLER_TOKEN
     kubectl config set-context tiller --cluster=k8s-cluster --user=tiller
     kubectl config use-context tiller
-    kubectl get ns
     '''
 }
 
