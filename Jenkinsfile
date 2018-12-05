@@ -112,7 +112,7 @@ def createKubeconfig() {
 def getHelmCharts() {
     sh '''
     git clone https://${GIT_USR}:${GIT_PSW}@${HELM_CHARTS_GIT_REPO}
-    cd {HELM_CHARTS_REPO}
+    cd ${HELM_CHARTS_REPO}
     git checkout ${HELM_CHARTS_BRANCH}
     '''
     }
