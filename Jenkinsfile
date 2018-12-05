@@ -1,4 +1,3 @@
-def VALUESFILE = ""
 def INSTALL = ""
 pipeline {
     // If you are running jenkins in a container use "agent { docker { image 'dtzar/helm-kubectl:2.11.0' }}"
@@ -67,8 +66,6 @@ spec:
             steps {
                 script {
                     if (REF != "") {
-                        sh "git pull origin master"
-                        VALUESFILE = sh(returnStdout: true, script:'git show --name-only --pretty=""')
                         env.APP = VALUESFILE.split('/')[0]
                     }
                 }
@@ -139,14 +136,16 @@ def setupWebhook() {
             [$class: 'GenericTrigger',
                 genericVariables: [
                     [key: 'REF', value: '$.ref'],
+                    [key: 'VALUESFILE', value: '$.commits[0].modified[0]'],
                 ],
                 causeString: 'Triggered on github push',
                 token: env.GITHUB_HOOK_SECRET,
                 printContributedVariables: true,
                 printPostContent: true,
                 regexpFilterText: '$REF',
-                regexpFilterExpression: 'refs/heads/master'
-
+                regexpFilterExpression: 'refs/heads/master',
+                regexpFilterText: '$VALUESFILE',
+                regexpFilterExpression: '.*.yaml'
             ]
         ])
     ])
