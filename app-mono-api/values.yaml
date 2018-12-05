@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: infracloud/app-mono-api
-  tag: 375460f
+  tag: 04503e4
   pullPolicy: Always
 
 nameOverride: ""
