@@ -1,26 +1,57 @@
 def VALUESFILE = ""
 def INSTALL = ""
 pipeline {
-//    agent { dockerfile { filename 'Dockerfile.jenkins' } }
-    agent any
+    // If you are running jenkins in a container use "agent { docker { image 'docker:18.09.0-git' }}"
+    agent {
+        kubernetes {
+          label 'deploy'
+          defaultContainer 'jnlp'
+          yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: jenkins-deploy
+spec:
+  containers:
+  - name: deploy
+    image: dtzar/helm-kubectl:2.11.0
+    command:
+    - cat
+    tty: true
+"""
+        }
+    }
 
     environment {
         KUBECONFIG = 'kubeconfig'
-        HELM_CHARTS_GIT_REPO = 'https://github.com/infracloudio/app-mono-helmcharts.git'
+        HELM_CHARTS_GIT_REPO = 'github.com/infracloudio/app-mono-helmcharts.git'
         HELM_CHARTS_REPO = 'app-mono-helmcharts'
         HELM_CHARTS_BRANCH = 'master'
         GIT = credentials('github-credentials')
         K8S_SERVER = credentials('k8s-server')
         K8S_TILLER_TOKEN = credentials('k8s-tiller-token')
         K8S_CA_BASE64 = credentials('k8s-ca-base84')
+        GITHUB_HOOK_SECRET = "github-webhook-token-app-mono-helmstate"
     }
 
     stages {
+        stage('configure webook') {
+            steps {
+                script {
+                    setupWebhook()
+	        }
+	    }
+        }
+
         stage('Create kubeconfig') {
             steps {
-                createKubeconfig()
+                container('deploy') {
+                    createKubeconfig()
+                }
             }
         }
+
         stage('Checkout scm') {
             steps {
                 checkout scm
@@ -30,8 +61,10 @@ pipeline {
         stage('Find app name to deploy') {
             steps {
                 script {
-                    VALUESFILE = sh(returnStdout: true, script:'git show --name-only --pretty=""')
-                    env.APP = VALUESFILE.split('/')[0] // TODO: change index and add error handling
+                    if (REF != "") {
+                        VALUESFILE = sh(returnStdout: true, script:'git show --name-only --pretty=""')
+                        env.APP = VALUESFILE.split('/')[0]
+                    }
                 }
                 echo "application to deploy:${APP}"
             }
@@ -45,14 +78,16 @@ pipeline {
 
         stage('Deploy helm chart') {
             steps {
-                script {
-                    INSTALL = sh (
-                        script: "helm status ${APP}",
-                        returnStatus: true
-                    )
+                container('deploy') {
+                    script {
+                        INSTALL = sh (
+                            script: "helm status ${APP}",
+                            returnStatus: true
+                        )
+                    }
+                    echo "To install? ${INSTALL}"
+                    helmInstall(INSTALL)
                 }
-                echo "To install? ${INSTALL}"
-                helmInstall(INSTALL)
             }
         }
     }
@@ -90,4 +125,24 @@ def helmInstall(install) {
     } else {
         sh 'helm upgrade --home /tmp $APP -f $APP/values.yaml ${HELM_CHARTS_REPO}/charts/$APP/'
     }
+}
+
+
+def setupWebhook() {
+    properties([
+        pipelineTriggers([
+            [$class: 'GenericTrigger',
+                genericVariables: [
+                    [key: 'REF', value: '$.ref'],
+                ],
+                causeString: 'Triggered on github push',
+                token: env.GITHUB_HOOK_SECRET,
+                printContributedVariables: true,
+                printPostContent: true,
+                regexpFilterText: '$REF',
+                regexpFilterExpression: 'refs/heads/master'
+
+            ]
+        ])
+    ])
 }
