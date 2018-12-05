@@ -28,15 +28,15 @@ spec:
         HELM_CHARTS_REPO = 'app-mono-helmcharts'
         HELM_CHARTS_BRANCH = 'master'
         GITHUB_HOOK_SECRET = "github-webhook-token-app-mono-helmstate"
-        K8S_SERVER = credentials('k8s-server')
-        K8S_TILLER_TOKEN = credentials('k8s-tiller-token')
-        K8S_CA_BASE64 = credentials('k8s-ca-base84')
-        GIT = credentials('github-credentials')
-        //GIT_USR = ""
-        //GIT_PSW = ""
-        //K8S_SERVER = ""
-        //K8S_TILLER_TOKEN = ""
-        //K8S_CA_BASE64 = ""
+        //K8S_SERVER = credentials('k8s-server')
+        //K8S_TILLER_TOKEN = credentials('k8s-tiller-token')
+        //K8S_CA_BASE64 = credentials('k8s-ca-base84')
+        //GIT = credentials('github-credentials')
+        GIT_USR = ""
+        GIT_PSW = ""
+        K8S_SERVER = ""
+        K8S_TILLER_TOKEN = ""
+        K8S_CA_BASE64 = ""
     }
 
     stages {
